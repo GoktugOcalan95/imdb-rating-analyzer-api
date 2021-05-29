@@ -404,7 +404,9 @@ export async function parseUserRatings(userId: string): Promise<void> {
   logger.info(`Parsed ${results.length.toString()} user rating rows.`);
 
   await insertUserRatings(userId, results);
-  //TODO delete user ratings file after parsing
+  if (fs.existsSync(userRatingsFile)) {
+    fs.unlinkSync(userRatingsFile);
+  }
 }
 
 async function insertUserRatings(
