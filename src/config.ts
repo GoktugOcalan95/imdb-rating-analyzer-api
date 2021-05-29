@@ -8,7 +8,6 @@ export const MongoConfig = {
 
 export const AppConfig = {
   logPath: "./logs/",
-  //TODO move logical parameters to settings in db
   progressStep: Number(process.env.PROGRESS_STEP) || 10,
   minimumVotes: Number(process.env.MINIMMUM_VOTES) || 100,
   dropCollectionInterval: Number(process.env.DROP_COLLECTION_INTERVAL) || 7,

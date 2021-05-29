@@ -28,3 +28,7 @@ export interface UserRatingTsv {
   rating: string;
   date: string;
 }
+
+export enum CommonSettings {
+  lastDrop = "lastCollectionDrop",
+}

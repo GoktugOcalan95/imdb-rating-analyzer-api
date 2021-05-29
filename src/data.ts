@@ -1,18 +1,24 @@
-import { ITitleDoc, Title } from "./models/title";
+import { ITitleDoc, Title } from "./models/titleModel";
 import csv from "csv-parser";
 import fs from "fs";
 import stream from "stream";
 import util from "util";
 import { logger } from "./utils/logger";
 import { calcProgress } from "./utils/misc";
-import { BasicTsv, EpisodeTsv, RatingTsv, UserRatingTsv } from "./types";
+import {
+  BasicTsv,
+  CommonSettings,
+  EpisodeTsv,
+  RatingTsv,
+  UserRatingTsv,
+} from "./types";
 import { AppConfig, DatasetConfig } from "./config";
 import { downloadFile } from "./utils/download";
 import { unzipGzFile } from "./utils/unzip";
-import { Setting } from "./models/setting";
 import moment from "moment";
-import { UserRating } from "./models/userRating";
+import { UserRating } from "./models/userRatingModel";
 import { ObjectId } from "mongodb";
+import { SettingController } from "./controllers/settingController";
 
 const ratingsFile = DatasetConfig.ratingsPath + DatasetConfig.ratingsFileName;
 const ratingsZip = ratingsFile + ".gz";
@@ -35,22 +41,23 @@ export async function parseAll(
 }
 
 export async function cleanCollection(): Promise<void> {
-  let lastDrop = await Setting.findOne({ key: "lastCollectionDrop" });
+  const lastDrop = await SettingController.getValue(CommonSettings.lastDrop);
   if (lastDrop) {
-    const lastDropDate = moment(lastDrop.value, "YYYY-MM-DD");
+    const lastDropDate = moment(lastDrop, "YYYY-MM-DD");
     const daysPast = moment().diff(lastDropDate, "days");
     if (daysPast < AppConfig.dropCollectionInterval) {
       logger.info(`Last collection drop was ${daysPast.toString()} days ago`);
       return;
     }
   } else {
-    lastDrop = new Setting({ key: "lastCollectionDrop" });
+    SettingController.create(
+      CommonSettings.lastDrop,
+      moment().format("YYYY-MM-DD")
+    );
   }
   logger.info("Dropping titles collection");
   await Title.collection.drop();
   await Title.collection.createIndex({ imdbId: 1 });
-  lastDrop.value = moment().format("YYYY-MM-DD");
-  await lastDrop.save();
 }
 
 export async function parseRatings(
