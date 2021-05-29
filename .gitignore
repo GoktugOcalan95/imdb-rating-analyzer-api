@@ -1,0 +1,53 @@
+# Dependency directory
+node_modules
+
+# Data
+*.seed
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+*.swp
+*.tsv
+results
+data
+
+# API keys and secrets
+.env
+
+# Ignore built ts files
+dist/**/*
+
+# ignore yarn.lock
+yarn.lock
+
+# Logs
+logs
+*.log
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variables file
+.env
+.env.test
+.env*.local
+
+### VisualStudioCode ###
+.vscode/*
+.vscode-test
+
+# Temporary folders
+tmp/
+temp/
