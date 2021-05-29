@@ -74,8 +74,10 @@ export async function parseRatings(
         results.push(data);
       }
       rowsParsed++;
+    })
+    .on("error", function (err) {
+      logger.error("Error reading ratings file %s", err.message);
     });
-  //TODO add file missing error
 
   await finished(rs);
   logger.info(`Parsed ${rowsParsed.toString()} rating rows.`);
@@ -148,8 +150,10 @@ export async function parseBasics(
   const rs: any = fs
     .createReadStream(basicsFile)
     .pipe(csv(csvOptions))
-    .on("data", (data: BasicTsv) => results.push(data));
-  //TODO add file missing error
+    .on("data", (data: BasicTsv) => results.push(data))
+    .on("error", function (err) {
+      logger.error("Error reading basics file %s", err.message);
+    });
 
   await finished(rs);
   logger.info(`Parsed ${results.length.toString()} basics rows.`);
@@ -218,8 +222,10 @@ export async function parseEpisodes(
   const rs: any = fs
     .createReadStream(episodeFile)
     .pipe(csv(csvOptions))
-    .on("data", (data: EpisodeTsv) => results.push(data));
-  //TODO add file missing error
+    .on("data", (data: EpisodeTsv) => results.push(data))
+    .on("error", function (err) {
+      logger.error("Error reading episodes file %s", err.message);
+    });
 
   await finished(rs);
   logger.info(`Parsed ${results.length.toString()} episode rows.`);
@@ -397,8 +403,10 @@ export async function parseUserRatings(userId: string): Promise<void> {
     .pipe(csv(csvOptions))
     .on("data", (data: UserRatingTsv) => {
       results.push(data);
+    })
+    .on("error", function (err) {
+      logger.error("Error reading user ratings file %s", err.message);
     });
-  //TODO add file missing error
 
   await finished(rs);
   logger.info(`Parsed ${results.length.toString()} user rating rows.`);
