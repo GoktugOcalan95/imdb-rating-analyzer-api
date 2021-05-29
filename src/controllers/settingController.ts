@@ -22,8 +22,9 @@ export class SettingController {
 
 function logError(err: any, setting: ISettingDoc, process: string) {
   if (err instanceof Error) {
-    logger.error("Error %s doc: %s", process, err.message);
+    logger.error("Error %s settings doc: %s", process, err.message);
   } else {
-    logger.error("Error %s doc: %o", process, err);
+    logger.error("Error %s settings doc: %o", process, err);
   }
+  logger.error("Setting: %o", setting);
 }
