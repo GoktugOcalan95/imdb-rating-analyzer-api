@@ -5,19 +5,20 @@ import { Document, Model, Schema } from "mongoose";
 export interface IUserRatingDoc extends Document {
   userId: ObjectId;
   imdbId: string;
-  rating?: number;
-  date?: Date;
+  rating: number;
+  date: Date;
 }
 
 export const UserRatingSchema = new Schema(
   {
-    userId: { type: ObjectId, index: true },
+    userId: ObjectId,
     imdbId: String,
     rating: Number,
     date: Date,
   },
   { collection: "userRatings" }
 );
+UserRatingSchema.index({ userId: 1, imdbId: 1 }, { unique: true });
 
 export type UserRatingModel = Model<IUserRatingDoc>;
 

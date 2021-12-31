@@ -4,14 +4,12 @@ import { Document, Model, Schema } from "mongoose";
 export interface IUserDoc extends Document {
   email: string;
   password?: string;
-  imdbUserId?: string;
 }
 
 export const UserSchema = new Schema(
   {
     email: { type: String, index: { unique: true } },
     password: String,
-    imdbUserId: { type: String, unique: true },
   },
   { collection: "users" }
 );

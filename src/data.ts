@@ -1,4 +1,5 @@
 import { ITitleDoc, Title } from "./models/titleModel";
+import { User } from "./models/userModel";
 import csv from "csv-parser";
 import fs from "fs";
 import stream from "stream";
@@ -10,7 +11,8 @@ import {
   CommonSettings,
   EpisodeTsv,
   RatingTsv,
-  UserRatingTsv,
+  UserRatingCsv,
+  UserRatingCsvOjb,
 } from "./types";
 import { AppConfig, DatasetConfig } from "./config";
 import { downloadFile } from "./utils/download";
@@ -26,7 +28,13 @@ const basicsFile = DatasetConfig.basicsPath + DatasetConfig.basicsFileName;
 const basicsZip = basicsFile + ".gz";
 const episodeFile = DatasetConfig.episodePath + DatasetConfig.episodeFileName;
 const episodeZip = episodeFile + ".gz";
-const csvOptions = { separator: "\t", quote: "" };
+const tsvOptions = { separator: "\t", quote: "" };
+const csvOptions = {
+  separator: ",",
+  quote: "",
+  headers: Object.keys(UserRatingCsvOjb),
+  skipLines: 1,
+};
 
 export async function parseAll(
   progressStep?: number,
@@ -37,7 +45,18 @@ export async function parseAll(
   await parseRatings(progressStep, dontDownloadData);
   await parseBasics(progressStep, dontDownloadData);
   await parseEpisodes(progressStep, dontDownloadData);
+  // await tempParseUserRating();
   logger.info("Finished parsing all data");
+}
+
+export async function tempParseUserRating(): Promise<void> {
+  logger.info("Started parsing user ratings");
+  let user = await User.findOne({ email: "goktug@email.com" });
+  if (!user) {
+    user = await User.create({ email: "goktug@email.com", password: "temp" });
+  }
+  await parseUserRatings(user.id);
+  logger.info("Finished parsing user ratings");
 }
 
 export async function cleanCollection(): Promise<void> {
@@ -50,7 +69,7 @@ export async function cleanCollection(): Promise<void> {
       return;
     }
   } else {
-    SettingController.create(
+    void SettingController.create(
       CommonSettings.lastDrop,
       moment().format("YYYY-MM-DD")
     );
@@ -75,7 +94,7 @@ export async function parseRatings(
   const finished = util.promisify(stream.finished);
   const rs: any = fs
     .createReadStream(ratingsFile)
-    .pipe(csv(csvOptions))
+    .pipe(csv(tsvOptions))
     .on("data", (data: RatingTsv) => {
       if (Number(data.numVotes) >= AppConfig.minimumVotes) {
         results.push(data);
@@ -156,7 +175,7 @@ export async function parseBasics(
 
   const rs: any = fs
     .createReadStream(basicsFile)
-    .pipe(csv(csvOptions))
+    .pipe(csv(tsvOptions))
     .on("data", (data: BasicTsv) => results.push(data))
     .on("error", function (err) {
       logger.error("Error reading basics file %s", err.message);
@@ -228,7 +247,7 @@ export async function parseEpisodes(
 
   const rs: any = fs
     .createReadStream(episodeFile)
-    .pipe(csv(csvOptions))
+    .pipe(csv(tsvOptions))
     .on("data", (data: EpisodeTsv) => results.push(data))
     .on("error", function (err) {
       logger.error("Error reading episodes file %s", err.message);
@@ -402,13 +421,13 @@ function handleEpisodeError(err: any, episode: EpisodeTsv, target: string) {
 export async function parseUserRatings(userId: string): Promise<void> {
   logger.info(`Started parsing user ratings for user ${userId}`);
   const userRatingsFile = DatasetConfig.userRatingsPath + userId + ".csv";
-  const results: UserRatingTsv[] = [];
+  const results: UserRatingCsv[] = [];
 
   const finished = util.promisify(stream.finished);
   const rs: any = fs
     .createReadStream(userRatingsFile)
     .pipe(csv(csvOptions))
-    .on("data", (data: UserRatingTsv) => {
+    .on("data", (data: UserRatingCsv) => {
       results.push(data);
     })
     .on("error", function (err) {
@@ -419,14 +438,14 @@ export async function parseUserRatings(userId: string): Promise<void> {
   logger.info(`Parsed ${results.length.toString()} user rating rows.`);
 
   await insertUserRatings(userId, results);
-  if (fs.existsSync(userRatingsFile)) {
-    fs.unlinkSync(userRatingsFile);
-  }
+  // if (fs.existsSync(userRatingsFile)) {
+  //   fs.unlinkSync(userRatingsFile);
+  // }
 }
 
 async function insertUserRatings(
   userId: string,
-  userRatings: UserRatingTsv[]
+  userRatings: UserRatingCsv[]
 ): Promise<void> {
   const documentNumStr: string = userRatings.length.toString();
   logger.info(`Starting to insert ${documentNumStr} user rating documents`);
@@ -459,7 +478,7 @@ async function insertUserRatings(
 
 function handleUserRatingError(
   err: any,
-  userRating: UserRatingTsv,
+  userRating: UserRatingCsv,
   process: string,
   userId: string
 ) {
