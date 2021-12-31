@@ -9,7 +9,7 @@ const port: string = process.env.SERVER_PORT || "4000";
 const app = express();
 
 // define a route handler for the default home page
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Hello world!");
 });
 
@@ -18,4 +18,5 @@ app.listen(port, () => {
   console.log(`server started at http://localhost:${port}`);
 });
 
-connectToMongo();
+const populateOnStart: boolean = process.argv.includes("populate");
+connectToMongo(populateOnStart);

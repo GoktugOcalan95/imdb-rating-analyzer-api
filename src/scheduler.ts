@@ -9,11 +9,10 @@ export async function setupAgenda(mongoDb: Db): Promise<void> {
 
   agenda.define("parse data", { concurrency: 1 }, async () => {
     logger.info("Starting scheduled job to parse data");
-    const progressStep = AppConfig.progressStep;
-    await parseAll(progressStep);
+    await parseAll(AppConfig.progressStep);
   });
 
   await agenda.start();
 
-  await agenda.every("0 4 * * *", "parse data");
+  await agenda.every("0 3 * * *", "parse data");
 }
