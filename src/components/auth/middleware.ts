@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { SecurityConfig } from "../../config";
 import { Request, Response, NextFunction } from "express";
 
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line
 export const extractJWT = (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(" ")[1];
 

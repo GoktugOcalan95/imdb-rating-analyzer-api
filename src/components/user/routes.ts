@@ -57,8 +57,11 @@ router.post("/login", (async (
             error: _err,
           });
         } else if (token) {
+          const userWithoutPassword = user.toObject();
+          delete userWithoutPassword.password;
           return res.status(200).json({
             token: token,
+            user: userWithoutPassword,
           });
         }
       });
@@ -68,6 +71,12 @@ router.post("/login", (async (
 
 // GET USER
 router.get("/:userId", extractJWT, (async (req, res) => {
+  // eslint-disable-next-line
+  if (!res?.locals?.jwt?.isAdmin) {
+    return res.status(403).json({
+      message: "Forbidden",
+    });
+  }
   const user = await UserController.getById(req.params.userId);
   res.send(user);
 }) as RequestHandler);

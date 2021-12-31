@@ -11,6 +11,7 @@ export class AuthController {
     jwt.sign(
       {
         username: user.username,
+        isAdmin: user.isAdmin,
       },
       SecurityConfig.secret,
       {
