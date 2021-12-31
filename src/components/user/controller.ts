@@ -1,5 +1,5 @@
 import { IUserDoc, User } from "./model";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils";
 
 export class UserController {
   public static async create(
@@ -20,7 +20,7 @@ export class UserController {
   public static async getByUsername(
     username: string
   ): Promise<IUserDoc | null> {
-    return User.findOne({ username }).select("-password");
+    return User.findOne({ username });
   }
 
   public static async getById(id: string): Promise<IUserDoc | null> {

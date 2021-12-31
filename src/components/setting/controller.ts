@@ -1,5 +1,5 @@
 import { ISettingDoc, Setting } from "./model";
-import { logger } from "../../utils/logger";
+import { logger } from "../../utils";
 
 export class SettingController {
   public static async getValue(key: string): Promise<string | null> {

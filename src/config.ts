@@ -7,10 +7,20 @@ export const MongoConfig = {
 };
 
 export const AppConfig = {
+  hostname: process.env.SERVER_HOSTNAME || "localhost",
+  port: process.env.SERVER_PORT || "4000",
   logPath: "./logs/",
   progressStep: Number(process.env.PROGRESS_STEP) || 10,
   minimumVotes: Number(process.env.MINIMMUM_VOTES) || 100,
   dropCollectionInterval: Number(process.env.DROP_COLLECTION_INTERVAL) || 7,
+};
+
+export const SecurityConfig = {
+  tokenExpireTime: process.env.SERVER_TOKEN_EXPIRETIME || 3600, //in seconds
+  issuer: process.env.SERVER_TOKEN_ISSUER || "goktug",
+  secret:
+    process.env.SERVER_TOKEN_SECRET ||
+    "superduberlongandsuperduperencryptedsecret",
 };
 
 export const DatasetConfig = {
