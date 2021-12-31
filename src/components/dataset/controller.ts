@@ -1,26 +1,13 @@
-import { ITitleDoc, Title } from "./models/titleModel";
-import { User } from "./models/userModel";
+import { ITitleDoc, Title } from "../title/model";
 import csv from "csv-parser";
 import fs from "fs";
 import stream from "stream";
 import util from "util";
-import { logger } from "./utils/logger";
-import { calcProgress } from "./utils/misc";
-import {
-  BasicTsv,
-  CommonSettings,
-  EpisodeTsv,
-  RatingTsv,
-  UserRatingCsv,
-  UserRatingCsvOjb,
-} from "./types";
-import { AppConfig, DatasetConfig } from "./config";
-import { downloadFile } from "./utils/download";
-import { unzipGzFile } from "./utils/unzip";
+import { logger, calcProgress, downloadFile, unzipGzFile } from "../../utils";
+import { AppConfig, DatasetConfig } from "../../config";
 import moment from "moment";
-import { UserRating } from "./models/userRatingModel";
-import { ObjectId } from "mongodb";
-import { SettingController } from "./controllers/settingController";
+import { SettingController } from "../setting/controller";
+import { BasicTsv, CommonSettings, EpisodeTsv, RatingTsv } from "./types";
 
 const ratingsFile = DatasetConfig.ratingsPath + DatasetConfig.ratingsFileName;
 const ratingsZip = ratingsFile + ".gz";
@@ -29,37 +16,22 @@ const basicsZip = basicsFile + ".gz";
 const episodeFile = DatasetConfig.episodePath + DatasetConfig.episodeFileName;
 const episodeZip = episodeFile + ".gz";
 const tsvOptions = { separator: "\t", quote: "" };
-const csvOptions = {
-  separator: ",",
-  quote: "",
-  headers: Object.keys(UserRatingCsvOjb),
-  skipLines: 1,
-};
 
-export async function parseAll(
-  progressStep?: number,
-  dontDownloadData?: boolean
-): Promise<void> {
-  logger.info("Started parsing all data");
-  await cleanCollection();
-  await parseRatings(progressStep, dontDownloadData);
-  await parseBasics(progressStep, dontDownloadData);
-  await parseEpisodes(progressStep, dontDownloadData);
-  // await tempParseUserRating();
-  logger.info("Finished parsing all data");
-}
-
-export async function tempParseUserRating(): Promise<void> {
-  logger.info("Started parsing user ratings");
-  let user = await User.findOne({ email: "goktug@email.com" });
-  if (!user) {
-    user = await User.create({ email: "goktug@email.com", password: "temp" });
+export class DatasetController {
+  public static async updateAll(): Promise<void> {
+    logger.info("Started updating the title dataset");
+    await cleanCollection();
+    await downloadRatingsFile();
+    await downloadBasicsFile();
+    await downloadEpisodeFile();
+    await parseRatings(AppConfig.progressStep);
+    await parseBasics(AppConfig.progressStep);
+    await parseEpisodes(AppConfig.progressStep);
+    logger.info("Finished updating the title dataset");
   }
-  await parseUserRatings(user.id);
-  logger.info("Finished parsing user ratings");
 }
 
-export async function cleanCollection(): Promise<void> {
+async function cleanCollection(): Promise<void> {
   const lastDrop = await SettingController.getValue(CommonSettings.lastDrop);
   if (lastDrop) {
     const lastDropDate = moment(lastDrop, "YYYY-MM-DD");
@@ -79,14 +51,7 @@ export async function cleanCollection(): Promise<void> {
   await Title.collection.createIndex({ imdbId: 1 });
 }
 
-export async function parseRatings(
-  progressStep?: number,
-  dontDownloadData?: boolean
-): Promise<void> {
-  if (!dontDownloadData) {
-    await downloadRatingsFile();
-  }
-
+async function parseRatings(progressStep?: number): Promise<void> {
   logger.info("Started parsing ratings");
   const results: RatingTsv[] = [];
   let rowsParsed = 0;
@@ -111,7 +76,7 @@ export async function parseRatings(
   await insertRatings(results, progressStep);
 }
 
-export async function downloadRatingsFile(): Promise<void> {
+async function downloadRatingsFile(): Promise<void> {
   if (fs.existsSync(ratingsZip)) {
     fs.unlinkSync(ratingsZip);
   }
@@ -160,14 +125,7 @@ async function insertRatings(
   }
 }
 
-export async function parseBasics(
-  progressStep?: number,
-  dontDownloadData?: boolean
-): Promise<void> {
-  if (!dontDownloadData) {
-    await downloadBasicsFile();
-  }
-
+async function parseBasics(progressStep?: number): Promise<void> {
   logger.info("Started parsing basics");
   const results: BasicTsv[] = [];
 
@@ -187,7 +145,7 @@ export async function parseBasics(
   await insertBasics(results, progressStep);
 }
 
-export async function downloadBasicsFile(): Promise<void> {
+async function downloadBasicsFile(): Promise<void> {
   if (fs.existsSync(basicsZip)) {
     fs.unlinkSync(basicsZip);
   }
@@ -232,14 +190,7 @@ async function insertBasics(
   }
 }
 
-export async function parseEpisodes(
-  progressStep?: number,
-  dontDownloadData?: boolean
-): Promise<void> {
-  if (!dontDownloadData) {
-    await downloadEpisodeFile();
-  }
-
+async function parseEpisodes(progressStep?: number): Promise<void> {
   logger.info("Started parsing episodes");
   const results: EpisodeTsv[] = [];
 
@@ -259,7 +210,7 @@ export async function parseEpisodes(
   await insertEpisodes(results, progressStep);
 }
 
-export async function downloadEpisodeFile(): Promise<void> {
+async function downloadEpisodeFile(): Promise<void> {
   if (fs.existsSync(episodeZip)) {
     fs.unlinkSync(episodeZip);
   }
@@ -416,77 +367,4 @@ function handleEpisodeError(err: any, episode: EpisodeTsv, target: string) {
     logger.error("Error updating %s doc: %o", target, err);
   }
   logger.error("Episode Row: %o", episode);
-}
-
-export async function parseUserRatings(userId: string): Promise<void> {
-  logger.info(`Started parsing user ratings for user ${userId}`);
-  const userRatingsFile = DatasetConfig.userRatingsPath + userId + ".csv";
-  const results: UserRatingCsv[] = [];
-
-  const finished = util.promisify(stream.finished);
-  const rs: any = fs
-    .createReadStream(userRatingsFile)
-    .pipe(csv(csvOptions))
-    .on("data", (data: UserRatingCsv) => {
-      results.push(data);
-    })
-    .on("error", function (err) {
-      logger.error("Error reading user ratings file %s", err.message);
-    });
-
-  await finished(rs);
-  logger.info(`Parsed ${results.length.toString()} user rating rows.`);
-
-  await insertUserRatings(userId, results);
-  // if (fs.existsSync(userRatingsFile)) {
-  //   fs.unlinkSync(userRatingsFile);
-  // }
-}
-
-async function insertUserRatings(
-  userId: string,
-  userRatings: UserRatingCsv[]
-): Promise<void> {
-  const documentNumStr: string = userRatings.length.toString();
-  logger.info(`Starting to insert ${documentNumStr} user rating documents`);
-
-  for (const [, userRating] of userRatings.entries()) {
-    const userRatingRecord = await UserRating.findOne({
-      userId: new ObjectId(userId),
-      imdbId: userRating.tconst,
-    });
-    if (userRatingRecord) {
-      userRatingRecord.rating = Number(userRating.rating);
-      userRatingRecord.date = new Date(userRating.date);
-      userRatingRecord.save().catch((err: any) => {
-        handleUserRatingError(err, userRating, "updating", userId);
-      });
-    } else {
-      UserRating.create({
-        userId: new ObjectId(userId),
-        imdbId: userRating.tconst,
-        rating: Number(userRating.rating),
-        date: new Date(userRating.date),
-      }).catch((err: any) => {
-        handleUserRatingError(err, userRating, "inserting", userId);
-      });
-    }
-  }
-
-  logger.info(`Finished inserting ${documentNumStr} user rating documents`);
-}
-
-function handleUserRatingError(
-  err: any,
-  userRating: UserRatingCsv,
-  process: string,
-  userId: string
-) {
-  if (err instanceof Error) {
-    logger.error("Error %s doc: %s", process, err.message);
-  } else {
-    logger.error("Error %s doc: %o", process, err);
-  }
-  logger.error("UserId: %s", userId);
-  logger.error("User Rating Row: %o", userRating);
 }

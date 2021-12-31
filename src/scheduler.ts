@@ -1,18 +1,17 @@
 import { Agenda } from "agenda";
-import { parseAll } from "./data";
 import { Db } from "mongodb";
-import { AppConfig } from "./config";
 import { logger } from "./utils/logger";
+import { DatasetController } from "./components/dataset/controller";
 
 export async function setupAgenda(mongoDb: Db): Promise<void> {
   const agenda = new Agenda({ mongo: mongoDb });
 
-  agenda.define("parse data", { concurrency: 1 }, async () => {
-    logger.info("Starting scheduled job to parse data");
-    await parseAll(AppConfig.progressStep);
+  agenda.define("update dataset", { concurrency: 1 }, async () => {
+    logger.info("Starting scheduled job to update title dataset");
+    await DatasetController.updateAll();
   });
 
   await agenda.start();
 
-  await agenda.every("0 3 * * *", "parse data");
+  await agenda.every("0 3 * * *", "update dataset");
 }

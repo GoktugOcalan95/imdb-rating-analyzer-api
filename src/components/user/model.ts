@@ -2,14 +2,16 @@ import mongoose from "mongoose";
 import { Document, Model, Schema } from "mongoose";
 
 export interface IUserDoc extends Document {
-  email: string;
+  username: string;
   password?: string;
+  isAdmin: boolean;
 }
 
 export const UserSchema = new Schema(
   {
-    email: { type: String, index: { unique: true } },
+    username: { type: String, index: { unique: true } },
     password: String,
+    isAdmin: { type: Boolean, default: false },
   },
   { collection: "users" }
 );
