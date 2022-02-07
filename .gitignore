@@ -1,5 +1,6 @@
 # Dependency directory
-node_modules
+/node_modules/
+/public/build/
 
 # Data
 *.seed
@@ -29,9 +30,6 @@ logs
 # Coverage directory used by tools like istanbul
 coverage
 *.lcov
-
-# Dependency directories
-node_modules/
 
 # TypeScript cache
 *.tsbuildinfo
