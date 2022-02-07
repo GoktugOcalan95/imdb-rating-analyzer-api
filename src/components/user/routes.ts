@@ -1,8 +1,10 @@
 import { Request, RequestHandler, Router } from "express";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import { UserController } from "./controller";
 import extractJWT from "../auth/middleware";
 import { AuthController } from "../auth/controller";
+import { SecurityConfig } from "../../config";
 
 const router = Router();
 
@@ -36,7 +38,7 @@ router.post("/login", (async (
   await UserController.getByUsername(username).then((user) => {
     if (!user || !user.password) {
       return res.status(401).json({
-        message: "Wrong Username or Password",
+        message: "Wrong username or password",
       });
     }
     bcrypt.compare(password, user.password, (err, result) => {
@@ -47,7 +49,7 @@ router.post("/login", (async (
         });
       } else if (!result) {
         return res.status(401).json({
-          message: "Wrong Username or Password",
+          message: "Wrong username or password",
         });
       }
       AuthController.signJWT(user, (_err, token) => {
@@ -57,12 +59,13 @@ router.post("/login", (async (
             error: _err,
           });
         } else if (token) {
+          res.cookie("jwt", token, {
+            httpOnly: true,
+            maxAge: Number(SecurityConfig.tokenExpireTime) * 1000,
+          });
           const userWithoutPassword = user.toObject();
           delete userWithoutPassword.password;
-          return res.status(200).json({
-            token: token,
-            user: userWithoutPassword,
-          });
+          return res.status(200).json(userWithoutPassword);
         }
       });
     });
@@ -77,9 +80,25 @@ router.get("/:userId", extractJWT, (async (req, res) => {
       message: "Forbidden",
     });
   }
+  if (!mongoose.isValidObjectId(req.params.userId)) {
+    return res.status(400).json({
+      message: "Invalid userId",
+    });
+  }
+
   const user = await UserController.getById(req.params.userId);
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
   res.send(user);
 }) as RequestHandler);
+
+router.post("/logout", (_req, res) => {
+  res.cookie("jwt", "", { maxAge: 0 });
+  res.sendStatus(200);
+});
 
 export const userRoutes = router;
 export default userRoutes;

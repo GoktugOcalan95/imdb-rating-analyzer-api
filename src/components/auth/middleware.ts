@@ -4,7 +4,9 @@ import { Request, Response, NextFunction } from "express";
 
 // eslint-disable-next-line
 export const extractJWT = (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(" ")[1];
+  // eslint-disable-next-line
+  const cookie = req.cookies["jwt"];
+  const token = cookie ? String(cookie) : undefined;
 
   if (token) {
     jwt.verify(token, SecurityConfig.secret, (err, decoded) => {
