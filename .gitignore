@@ -51,3 +51,6 @@ node_modules/
 # Temporary folders
 tmp/
 temp/
+
+# Mac
+.DS_Store
