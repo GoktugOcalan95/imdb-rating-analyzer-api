@@ -4,6 +4,7 @@ import express from "express";
 import { connectToMongo } from "./db";
 import { Routes } from "./routes";
 import { AppConfig } from "./config";
+import { logger } from "./utils";
 import cookieParser from "cookie-parser";
 
 // initialize env configuration
@@ -24,9 +25,7 @@ app.use(Routes);
 
 // start the Express server
 app.listen(AppConfig.port, () => {
-  console.log(
-    `server started at http://${AppConfig.hostname}:${AppConfig.port}`
-  );
+  logger.info(`server started at http://${AppConfig.hostname}:${AppConfig.port}`);
 });
 
 connectToMongo();

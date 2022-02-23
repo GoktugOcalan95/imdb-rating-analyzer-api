@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { MongoConfig } from "./config";
 import { setupAgenda } from "./scheduler";
+import { logger } from "./utils";
 
 const mongoConnectionString = `mongodb://${MongoConfig.host}:${MongoConfig.port}/${MongoConfig.db}`;
 
@@ -13,11 +14,11 @@ export function connectToMongo(): void {
       useUnifiedTopology: true,
     })
     .then(() => {
-      console.log("Successfully connected to the database");
+      logger.info("Successfully connected to the database");
       void setupAgenda(mongoose.connection.db);
     })
     .catch((err: Error) => {
-      console.log("Could not connect to the database. Exiting now...", err);
+      logger.error("Could not connect to the database. Exiting now...", err);
       process.exit();
     });
 }
