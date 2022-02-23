@@ -1,6 +1,6 @@
 export const MongoConfig = {
   db: process.env.MONGO_DB || "imdb",
-  host: process.env.MONGO_HOST || "localhost",
+  host: process.env.MONGO_HOST || "127.0.0.1",
   port: Number(process.env.MONGO_PORT) || 27017,
   password: process.env.MONGO_PWD,
   user: process.env.MONGO_USER,
