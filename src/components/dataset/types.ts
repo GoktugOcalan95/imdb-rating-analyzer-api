@@ -25,4 +25,5 @@ export interface EpisodeTsv {
 
 export enum CommonSettings {
   lastDrop = "lastCollectionDrop",
+  dailyUpdateTimeString = "dailyUpdateTimeString",
 }
