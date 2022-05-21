@@ -40,6 +40,10 @@ async function cleanCollection(): Promise<void> {
       logger.info(`Last collection drop was ${daysPast.toString()} days ago`);
       return;
     }
+    void SettingController.update(
+      CommonSettings.lastDrop,
+      moment().format("YYYY-MM-DD")
+    );
   } else {
     void SettingController.create(
       CommonSettings.lastDrop,

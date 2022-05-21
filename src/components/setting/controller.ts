@@ -21,6 +21,21 @@ export class SettingController {
     });
     return Promise.resolve(createdSetting);
   }
+  public static async update(
+    key: string,
+    value: string
+  ): Promise<ISettingDoc | null> {
+    const setting = await Setting.findOne({ key });
+    if (!setting) {
+      return Promise.reject(null);
+    }
+    setting.value = value;
+    setting.save().catch((err) => {
+      logError(err, setting, "updating");
+      return Promise.reject(null);
+    });
+    return await Promise.resolve(setting);
+  }
 }
 
 function logError(err: any, setting: ISettingDoc, process: string) {
