@@ -15,6 +15,11 @@ export const AppConfig = {
   dropCollectionInterval: Number(process.env.DROP_COLLECTION_INTERVAL) || 7,
 };
 
+export const ClientConfig = {
+  hostname: process.env.CLIENT_HOSTNAME || "localhost",
+  port: process.env.CLIENT_PORT || "8080",
+}
+
 export const SecurityConfig = {
   tokenExpireTime: process.env.SERVER_TOKEN_EXPIRETIME || 3600, //in seconds
   issuer: process.env.SERVER_TOKEN_ISSUER || "goktug",

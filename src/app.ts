@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import { connectToMongo } from "./db";
 import { Routes } from "./routes";
-import { AppConfig } from "./config";
+import { AppConfig, ClientConfig } from "./config";
 import { logger } from "./utils";
 import cookieParser from "cookie-parser";
 
@@ -18,7 +18,10 @@ app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: `http://${AppConfig.hostname}:${AppConfig.port}`,
+    origin: [
+      `http://${AppConfig.hostname}:${AppConfig.port}`,
+      `http://${ClientConfig.hostname}:${ClientConfig.port}`
+    ],
   })
 );
 app.use(Routes);
