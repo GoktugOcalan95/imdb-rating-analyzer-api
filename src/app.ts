@@ -28,7 +28,7 @@ app.use(Routes);
 
 // start the Express server
 app.listen(AppConfig.port, () => {
-  logger.info(`-------- Server started http://${AppConfig.hostname}:${AppConfig.port}`);
+  logger.info(`---------- Server started http://${AppConfig.hostname}:${AppConfig.port} ----------`);
 });
 
 connectToMongo();
