@@ -72,7 +72,26 @@ router.post("/login", (async (
   });
 }) as RequestHandler);
 
-// GET USER
+// GET USER BY TOKEN
+router.get("/", extractJWT, (async (_req, res) => {
+  // eslint-disable-next-line
+  if (!res?.locals?.jwt?.username) {
+    return res.status(400).json({
+      message: "Invalid token",
+    });
+  }
+
+  // eslint-disable-next-line
+  const user = await UserController.getByUsername(res.locals.jwt.username);
+  if (!user) {
+    return res.status(404).json({
+      message: "User not found",
+    });
+  }
+  res.send(user);
+}) as RequestHandler);
+
+// GET USER BY ID
 router.get("/:userId", extractJWT, (async (req, res) => {
   // eslint-disable-next-line
   if (!res?.locals?.jwt?.isAdmin) {
