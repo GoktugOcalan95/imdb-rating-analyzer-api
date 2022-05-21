@@ -19,10 +19,7 @@ export async function setupAgenda(mongoDb: Db): Promise<void> {
     void SettingController.create(CommonSettings.dailyUpdateTimeString, defaultDailyUpdateTimeString);
   }
 
-  const agendaScheduleTimeString = dailyUpdateTimeString || defaultDailyUpdateTimeString;
-  logger.info(`Agenda schedule time string is "${agendaScheduleTimeString}"`);
-
   await agenda.start();
-
+  const agendaScheduleTimeString = dailyUpdateTimeString || defaultDailyUpdateTimeString;
   await agenda.every(agendaScheduleTimeString, "update dataset");
 }
