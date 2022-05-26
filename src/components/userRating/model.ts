@@ -16,9 +16,20 @@ export const UserRatingSchema = new Schema(
     rating: Number,
     date: Date,
   },
-  { collection: "userRatings" }
+  { 
+    collection: "userRatings",
+    toObject: { virtuals: true },
+    toJSON: { virtuals: true }
+  }
 );
 UserRatingSchema.index({ userId: 1, imdbId: 1 }, { unique: true });
+
+UserRatingSchema.virtual('title', {
+  ref: 'Title',
+  localField: 'imdbId',
+  foreignField: 'imdbId',
+  justOne: true
+});
 
 export type UserRatingModel = Model<IUserRatingDoc>;
 
