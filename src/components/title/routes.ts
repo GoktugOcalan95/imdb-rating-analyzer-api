@@ -1,19 +1,19 @@
 import { RequestHandler, Router } from "express";
-import mongoose from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { TitleController } from "./controller";
 import extractJWT from "../auth/middleware";
 
 const router = Router();
 
 // GET Title BY IMDB ID
-router.get("/:id", extractJWT, (async (req, res) => {
-  if (!mongoose.isValidObjectId(req.params.userId)) {
+router.get("/:imdbId", extractJWT, (async (req, res) => {
+  if (!isValidObjectId(req.params.imdbId)) {
     return res.status(400).json({
       message: "Invalid titleId",
     });
   }
 
-  const title = await TitleController.getByImdbId(req.params.id);
+  const title = await TitleController.getByImdbId(req.params.imdbId);
   if (!title) {
     return res.status(404).json({
       message: "Title not found",
