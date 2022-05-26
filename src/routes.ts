@@ -8,6 +8,6 @@ const router: Router = Router();
 router.use("/dataset", datasetRoutes);
 router.use("/title", titleRoutes);
 router.use("/user", userRoutes);
-router.use("/userRating", userRatingRoutes);
+router.use("/rating", userRatingRoutes);
 
 export const Routes = router;
