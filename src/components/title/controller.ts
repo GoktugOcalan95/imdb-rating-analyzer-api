@@ -1,5 +1,5 @@
 import { ITitleDoc, Title } from "./model";
-import { logger } from "../../utils";
+import { logErrorWithDetail } from "../../utils";
 import { TitleQueryResult, TitleQueryOptions } from "./types";
 
 export class TitleController {
@@ -9,7 +9,7 @@ export class TitleController {
   }
 
   public static async getByImdbId(imdbId: string): Promise<ITitleDoc | null> {
-    return Title.findById(imdbId);
+    return Title.findOne({imdbId});
   }
 
   public static async getAll(options: TitleQueryOptions): Promise<TitleQueryResult | null> {
@@ -36,17 +36,8 @@ export class TitleController {
         items,
       };
     } catch (err) {
-      logError(err, "getting");
-      logger.error("Title Query Options: %o", options);
+      logErrorWithDetail(err, "Title - GetAll", options, "Title Query Options");
       return Promise.reject(null);
     }
-  }
-}
-
-function logError(err: any, process: string) {
-  if (err instanceof Error) {
-    logger.error("Error %s title doc: %s", process, err.message);
-  } else {
-    logger.error("Error %s title doc: %o", process, err);
   }
 }

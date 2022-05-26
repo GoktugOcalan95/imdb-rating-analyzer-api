@@ -1,3 +1,5 @@
+import { logger } from "./logger";
+
 export function getStartTime(): [number, number] {
   return process.hrtime();
 }
@@ -31,4 +33,21 @@ export function isNumeric(str: string): boolean {
 
 export function emptyFunction(): void {
   // do nothing.
+}
+
+export function logError(err: unknown, description: string): void {
+  if (err instanceof Error) {
+    logger.error("Error at %s - %s", description, err.message);
+  } else {
+    logger.error("Error at %s - %o", description, err);
+  }
+}
+
+export function logErrorWithDetail(err: unknown, description: string, object: unknown, detailDescription: string): void {
+  if (err instanceof Error) {
+    logger.error("Error at %s - %s", description, err.message);
+  } else {
+    logger.error("Error at %s - %o", description, err);
+  }
+  logger.error("%s: %o", detailDescription, object);
 }
