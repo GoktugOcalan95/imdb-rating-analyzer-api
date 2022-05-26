@@ -75,14 +75,14 @@ router.post("/login", (async (
 // GET USER BY TOKEN
 router.get("/", extractJWT, (async (_req, res) => {
   // eslint-disable-next-line
-  if (!res?.locals?.jwt?.username) {
+  if (!res?.locals?.jwt?.userId) {
     return res.status(400).json({
       message: "Invalid token",
     });
   }
 
   // eslint-disable-next-line
-  const user = await UserController.getByUsername(res.locals.jwt.username);
+  const user = await UserController.getById(res.locals.jwt.userId);
   if (!user) {
     return res.status(404).json({
       message: "User not found",

@@ -10,6 +10,7 @@ export class AuthController {
   ): void {
     jwt.sign(
       {
+        userId: String(user._id),
         username: user.username,
         isAdmin: user.isAdmin,
       },
