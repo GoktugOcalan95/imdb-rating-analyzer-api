@@ -2,11 +2,11 @@ import csv from "csv-parser";
 import fs from "fs";
 import stream from "stream";
 import util from "util";
-import { logger } from "../../utils";
+import { logErrorWithDetail, logger } from "../../utils";
 import { DatasetConfig } from "../../config";
-import { UserRating } from "./model";
+import { IUserRatingDoc, UserRating } from "./model";
 import { ObjectId } from "mongodb";
-import { UserRatingCsv, UserRatingCsvOjb } from "./types";
+import { UserRatingCsv, UserRatingCsvOjb, UserRatingQueryOptions, UserRatingQueryResult } from "./types";
 
 const csvOptions = {
   separator: ",",
@@ -16,6 +16,51 @@ const csvOptions = {
 };
 
 export class UserRatingController {
+
+  public static async getById(id: string): Promise<IUserRatingDoc | null> {
+    return UserRating.findById(id);
+  }
+
+  public static async getByUserId(userId: string): Promise<IUserRatingDoc[] | null> {
+    const userObjId = new ObjectId(userId);
+    return UserRating.find({userId: userObjId});
+  }
+
+  public static async getByUserIdAndImdbId(userId: string, imdbId: string): Promise<IUserRatingDoc | null> {
+    const userObjId = new ObjectId(userId);
+    return UserRating.findOne({userId: userObjId, imdbId});
+  }
+
+  public static async getAll(options: UserRatingQueryOptions): Promise<UserRatingQueryResult | null> {
+    const page = options.page || 1;
+    const itemPerPage = options.itemPerPage || 20;
+    const skip = (page - 1) * itemPerPage;
+
+    const query: UserRatingQueryOptions = {};
+    if (options.userId){
+      query.userId = options.userId;
+    }
+    try {
+      const countPromise = UserRating.countDocuments(query);
+      const itemsPromise = UserRating.find(query).limit(itemPerPage).skip(skip);
+      const [count, items] = await Promise.all([countPromise, itemsPromise]);
+  
+      const pageCount = Math.ceil(count / itemPerPage);
+
+      return {
+        pagination: {
+          count,
+          pageCount,
+        },
+        items,
+      };
+    } catch (err) {
+      logErrorWithDetail(err, "UserRating - GetAll", options, "UserRating Query Options");
+      return Promise.reject(null);
+    }
+  }
+
+
   public static async parseUserRatings(
     userId: string,
     deleteFile?: boolean
@@ -63,7 +108,8 @@ async function insertUserRatings(
       userRatingRecord.rating = Number(userRating.rating);
       userRatingRecord.date = new Date(userRating.date);
       userRatingRecord.save().catch((err: any) => {
-        handleUserRatingError(err, userRating, "updating", userId);
+        logErrorWithDetail(err, "InsertUserRatings - Updating", userRating, "User Rating Row");
+        logger.error("UserId: %s", userId);
       });
     } else {
       UserRating.create({
@@ -72,25 +118,11 @@ async function insertUserRatings(
         rating: Number(userRating.rating),
         date: new Date(userRating.date),
       }).catch((err: any) => {
-        handleUserRatingError(err, userRating, "inserting", userId);
+        logErrorWithDetail(err, "InsertUserRatings - Inserting", userRating, "User Rating Row");
+        logger.error("UserId: %s", userId);
       });
     }
   }
 
   logger.info(`Finished inserting ${documentNumStr} user rating documents`);
-}
-
-function handleUserRatingError(
-  err: any,
-  userRating: UserRatingCsv,
-  process: string,
-  userId: string
-) {
-  if (err instanceof Error) {
-    logger.error("Error %s doc: %s", process, err.message);
-  } else {
-    logger.error("Error %s doc: %o", process, err);
-  }
-  logger.error("UserId: %s", userId);
-  logger.error("User Rating Row: %o", userRating);
 }
