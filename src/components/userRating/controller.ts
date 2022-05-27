@@ -2,7 +2,7 @@ import csv from "csv-parser";
 import fs from "fs";
 import stream from "stream";
 import util from "util";
-import { logErrorWithDetail, logger } from "../../utils";
+import { logError, logger } from "../../utils";
 import { DatasetConfig } from "../../config";
 import { IUserRatingDoc, UserRating } from "./model";
 import { ObjectId } from "mongodb";
@@ -27,16 +27,91 @@ export class UserRatingController {
   }
 
   public static async getByUserId(userId: string, options: UserRatingQueryOptions): Promise<UserRatingQueryResult | null> {
-    const page = options.page || 1;
-    const itemPerPage = options.itemPerPage || 20;
+    const page = Number(options.page) || 1;
+    const itemPerPage = Number(options.itemPerPage) || 20;
     const skip = (page - 1) * itemPerPage;
+    const sortBy = options.sortBy || "date";
+    const sortDirection = Number(options.direction) || 1;
+    
+    // eslint-disable-next-line
+    const matches: {}[] = [];
+    matches.push({
+      "$match": {
+        "userId": new ObjectId(userId),
+      }
+    });
+    if (options.rating){
+      matches.push({
+        "$match": {
+          "rating": Number(options.rating),
+        }
+      });
+    }
+    if (options.name){
+      matches.push({
+        "$match": {
+          "title.name": options.name,
+        }
+      });
+    }
+    if (options.type){
+      matches.push({
+        "$match": {
+          "title.type": options.type,
+        }
+      });
+    }
+    if (options.year){
+      matches.push({
+        "$match": {
+          "title.year": Number(options.year),
+        }
+      });
+    }
 
-    const query: UserRatingQueryOptions = { userId };
     try {
-      const countPromise = UserRating.countDocuments(query);
-      const itemsPromise = UserRating.find(query).populate('title').limit(itemPerPage).skip(skip);
-      const [count, items] = await Promise.all([countPromise, itemsPromise]);
-  
+
+      const results = await UserRating.aggregate([
+        {
+          $lookup: {
+            from: "titles",
+            localField: "imdbId",
+            foreignField: "imdbId",
+            as: "title"
+          }
+        },
+        { $unwind: "$title" },
+        {
+          $lookup: {
+            from: "titles",
+            localField: "title.parentImdbId",
+            foreignField: "imdbId",
+            as: "parentTitle"
+          }
+        },
+        { $unwind: { path: '$parentTitle', preserveNullAndEmptyArrays: true } },
+        ...matches,
+        {
+          $sort: {
+            [sortBy]: sortDirection
+          }
+        },
+        {
+          $facet: {
+            items: [{ $skip: skip }, { $limit: itemPerPage }],
+            totalCount: [
+              {
+                $count: 'count'
+              }
+            ]
+          }
+        }
+      ]);
+      
+      // eslint-disable-next-line
+      const items: IUserRatingDoc[] = results[0].items;
+      // eslint-disable-next-line
+      const count: number = results[0].totalCount[0].count;
       const pageCount = Math.ceil(count / itemPerPage);
 
       return {
@@ -47,11 +122,10 @@ export class UserRatingController {
         items,
       };
     } catch (err) {
-      logErrorWithDetail(err, "UserRating - GetAll", options, "UserRating Query Options");
+      logError(err, "UserRating - GetAll", options);
       return Promise.reject(null);
     }
   }
-
 
   public static async parseUserRatings(
     userId: string,
@@ -100,7 +174,7 @@ async function insertUserRatings(
       userRatingRecord.rating = Number(userRating.rating);
       userRatingRecord.date = new Date(userRating.date);
       userRatingRecord.save().catch((err: any) => {
-        logErrorWithDetail(err, "InsertUserRatings - Updating", userRating, "User Rating Row");
+        logError(err, "InsertUserRatings - Updating", userRating);
         logger.error("UserId: %s", userId);
       });
     } else {
@@ -110,7 +184,7 @@ async function insertUserRatings(
         rating: Number(userRating.rating),
         date: new Date(userRating.date),
       }).catch((err: any) => {
-        logErrorWithDetail(err, "InsertUserRatings - Inserting", userRating, "User Rating Row");
+        logError(err, "InsertUserRatings - Inserting", userRating);
         logger.error("UserId: %s", userId);
       });
     }

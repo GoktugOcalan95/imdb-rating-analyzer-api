@@ -17,10 +17,13 @@ export interface UserRatingQueryOptions {
   imdbId?: string;
   rating?: number;
   date?: Date;
+  name?: string,
+  type?: string,
+  year?: number,
   page?: number;
   itemPerPage?: 20 | 50 | 100;
   sortBy?: string;
-  direction?: string;
+  direction?: -1 | 1;
 }
 
 export interface UserRatingQueryResult {
