@@ -1,5 +1,5 @@
 import { ITitleDoc, Title } from "./model";
-import { logErrorWithDetail } from "../../utils";
+import { logError } from "../../utils";
 import { TitleQueryResult, TitleQueryOptions } from "./types";
 
 export class TitleController {
@@ -36,7 +36,7 @@ export class TitleController {
         items,
       };
     } catch (err) {
-      logErrorWithDetail(err, "Title - GetAll", options, "Title Query Options");
+      logError(err, "Title - GetAll", options);
       return Promise.reject(null);
     }
   }

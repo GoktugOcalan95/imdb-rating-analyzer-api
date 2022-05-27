@@ -35,19 +35,10 @@ export function emptyFunction(): void {
   // do nothing.
 }
 
-export function logError(err: unknown, description: string): void {
+export function logError(err: unknown, description: string, object?: unknown): void {
   if (err instanceof Error) {
-    logger.error("Error at %s - %s", description, err.message);
+    logger.error("Error at %s - %s: ", description, err.message, {object});
   } else {
-    logger.error("Error at %s - %o", description, err);
+    logger.error("Error at %s: ", description, err, {object});
   }
-}
-
-export function logErrorWithDetail(err: unknown, description: string, object: unknown, detailDescription: string): void {
-  if (err instanceof Error) {
-    logger.error("Error at %s - %s", description, err.message);
-  } else {
-    logger.error("Error at %s - %o", description, err);
-  }
-  logger.error("%s: %o", detailDescription, object);
 }
