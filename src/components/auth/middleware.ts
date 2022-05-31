@@ -16,6 +16,11 @@ export const extractJWT = (req: Request, res: Response, next: NextFunction) => {
           err,
         });
       } else {
+        if (decoded && !decoded.userId) {
+          return res.status(400).json({
+            message: "Invalid token",
+          });
+        }
         res.locals.jwt = decoded;
         next();
       }
