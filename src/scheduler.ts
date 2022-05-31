@@ -21,5 +21,5 @@ export async function setupAgenda(mongoDb: Db): Promise<void> {
 
   await agenda.start();
   const agendaScheduleTimeString = dailyUpdateTimeString || defaultDailyUpdateTimeString;
-  await agenda.every(agendaScheduleTimeString, "update dataset", null, { skipImmediate: true });
+  await agenda.every(agendaScheduleTimeString, "update dataset", {}, { timezone:"America/Toronto", skipImmediate: true });
 }
