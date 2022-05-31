@@ -32,9 +32,8 @@ export class UserRatingController {
     const skip = (page - 1) * itemPerPage;
     const sortBy = options.sortBy || "date";
     const sortDirection = Number(options.direction) || 1;
-    
-    // eslint-disable-next-line
-    const matches: {}[] = [];
+
+    const matches: Record<string, unknown>[] = [];
     matches.push({
       "$match": {
         "userId": new ObjectId(userId),
@@ -111,7 +110,7 @@ export class UserRatingController {
       // eslint-disable-next-line
       const items: IUserRatingDoc[] = results[0].items;
       // eslint-disable-next-line
-      const count: number = results[0].totalCount[0].count;
+      const count = results[0].totalCount.length > 0 ? Number(results[0].totalCount[0].count) : 0;
       const pageCount = Math.ceil(count / itemPerPage);
 
       return {
