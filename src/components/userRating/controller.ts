@@ -121,7 +121,7 @@ export class UserRatingController {
         items,
       };
     } catch (err) {
-      logError(err, "UserRating - GetAll", options);
+      logError(err, "UserRating - GetAll", { userId, options } );
       return Promise.reject(null);
     }
   }
