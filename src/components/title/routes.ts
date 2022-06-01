@@ -1,5 +1,4 @@
 import { RequestHandler, Router } from "express";
-import { isValidObjectId } from "mongoose";
 import { TitleController } from "./controller";
 import extractJWT from "../auth/middleware";
 
@@ -7,12 +6,6 @@ const router = Router();
 
 // GET Title BY IMDB ID
 router.get("/:imdbId", extractJWT, (async (req, res) => {
-  if (!isValidObjectId(req.params.imdbId)) {
-    return res.status(400).json({
-      message: "Invalid titleId",
-    });
-  }
-
   const title = await TitleController.getByImdbId(req.params.imdbId);
   if (!title) {
     return res.status(404).json({
@@ -31,6 +24,18 @@ router.get("/", extractJWT, (async (req, res) => {
     });
   }
   res.send(titles);
+}) as RequestHandler);
+
+// GET Episodes By Parent Title, With User Ratings
+router.get("/episodes/:imdbId", extractJWT, (async (req, res) => {
+  // eslint-disable-next-line
+  await TitleController.getEpisodesWithUserRating(req.params.imdbId, res?.locals?.jwt?.userId)
+    .then(title => res.send(title))
+    .catch(() => {
+      return res.status(500).json({
+        message: "An unexpected error occured",
+      });
+    });
 }) as RequestHandler);
 
 export const titleRoutes = router;

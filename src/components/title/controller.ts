@@ -1,6 +1,7 @@
 import { ITitleDoc, Title } from "./model";
 import { logError } from "../../utils";
 import { TitleQueryResult, TitleQueryOptions } from "./types";
+import { ObjectId } from "mongodb";
 
 export class TitleController {
 
@@ -37,6 +38,75 @@ export class TitleController {
       };
     } catch (err) {
       logError(err, "Title - GetAll", options);
+      return Promise.reject(null);
+    }
+  }
+    
+  public static async getEpisodesWithUserRating(parentImdbId: string, userId: string): Promise<ITitleDoc | null> {
+    try {
+      const results = await Title.aggregate( [
+        {
+          $match: {
+            "imdbId": parentImdbId
+          }
+        },
+        {
+          $lookup: {
+            from: "titles",
+            let: { 'childImdbId': '$children' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $in: ['$imdbId', '$$childImdbId']
+                  }
+                }
+              },
+              {
+                $lookup: {
+                  from: "userRatings",
+                  let: { 'currentChildImdbId': '$imdbId' },
+                  pipeline: [{
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $eq: [ "$userId",  new ObjectId(userId) ] },
+                          { $eq: [ "$imdbId",  '$$currentChildImdbId' ] },
+                        ]
+                      }
+                    }
+                  }],
+                  as: "userRating"
+                }
+              }
+            ],
+            as: "children"
+          }
+        },
+        {
+          $lookup: {
+            from: "userRatings",
+            pipeline: [{
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: [ "$userId",  new ObjectId(userId) ] },
+                    { $eq: [ "$imdbId",  parentImdbId ] },
+                  ]
+                }
+              }
+            }],
+            as: "userRating"
+          }
+        }
+      ]);
+
+      // eslint-disable-next-line
+      const title: ITitleDoc = results[0];
+      return title;
+      
+    } catch (err) {
+      logError(err, "Title - getEpisodesWithUserRating", { parentImdbId, userId });
       return Promise.reject(null);
     }
   }
