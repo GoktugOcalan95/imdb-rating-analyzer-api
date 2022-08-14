@@ -4,7 +4,7 @@ import extractJWT from "../auth/middleware";
 
 const router = Router();
 
-// GET Title BY IMDB ID
+// GET Title by Imdb Id
 router.get("/:imdbId", extractJWT, (async (req, res) => {
   const title = await TitleController.getByImdbId(req.params.imdbId);
   if (!title) {
@@ -18,6 +18,28 @@ router.get("/:imdbId", extractJWT, (async (req, res) => {
 // GET Title By Query
 router.get("/", extractJWT, (async (req, res) => {
   const titles = await TitleController.getAll(req.query);
+  if (!titles) {
+    return res.status(404).json({
+      message: "Results not found",
+    });
+  }
+  res.send(titles);
+}) as RequestHandler);
+
+// GET Title By Name Matching
+router.get("/search/:name", extractJWT, (async (req, res) => {
+  const titles = await TitleController.searchByName(req.params.name);
+  if (!titles) {
+    return res.status(404).json({
+      message: "Results not found",
+    });
+  }
+  res.send(titles);
+}) as RequestHandler);
+
+// GET Series By Name Matching
+router.get("/search/series/:name", extractJWT, (async (req, res) => {
+  const titles = await TitleController.searchByName(req.params.name, ['tvSeries', 'tvMiniSeries']);
   if (!titles) {
     return res.status(404).json({
       message: "Results not found",

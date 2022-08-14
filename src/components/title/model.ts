@@ -35,6 +35,7 @@ export const TitleSchema = new Schema(
   },
   { collection: "titles" }
 );
+TitleSchema.index({ name: 'text' }, { background: false });
 
 export type TitleModel = Model<ITitleDoc>;
 

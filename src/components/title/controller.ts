@@ -41,7 +41,32 @@ export class TitleController {
       return Promise.reject(null);
     }
   }
-    
+
+  public static async searchByName(name: string, type?: string[]): Promise<ITitleDoc[] | null> {
+    try {
+      const results = await Title.aggregate()
+        .match(
+          {
+            $text: {
+              $search: name,
+              $caseSensitive: false,
+              $diacriticSensitive: false
+            },
+            type: type ? { $in: type } : { $exists: true }, 
+          },
+        )
+        .project({ imdbId: 1, name: 1, year: 1, type: 1, votes: 1, score: { $multiply: [ { $add: [{$floor: {$log10: "$votes"}}, 1] }, { $meta: "textScore" } ] } })
+        .sort( { score: -1, votes: -1 } )
+        .limit(5);
+
+      // eslint-disable-next-line
+      return results;
+    } catch (err) {
+      logError(err, "Title - searchByName", { name });
+      return Promise.reject(null);
+    }
+  }
+
   public static async getEpisodesWithUserRating(parentImdbId: string, userId: string): Promise<ITitleDoc | null> {
     try {
       const results = await Title.aggregate( [
@@ -58,7 +83,7 @@ export class TitleController {
               {
                 $match: {
                   $expr: {
-                    $in: ['$imdbId', '$$childImdbId']
+                    $in: ['$imdbId', '$$childImdbId'] // Todo: If a series has no children then this line causes an error, tt0361240
                   }
                 }
               },
@@ -78,6 +103,9 @@ export class TitleController {
                   }],
                   as: "userRating"
                 }
+              },
+              {
+                $sort: { season: 1, episode: 1 } // Todo: Move this step to client, for performance and control over undefined seasons
               }
             ],
             as: "children"
@@ -110,4 +138,5 @@ export class TitleController {
       return Promise.reject(null);
     }
   }
+
 }
