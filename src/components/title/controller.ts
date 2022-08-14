@@ -103,9 +103,6 @@ export class TitleController {
                   }],
                   as: "userRating"
                 }
-              },
-              {
-                $sort: { season: 1, episode: 1 } // Todo: Move this step to client, for performance and control over undefined seasons
               }
             ],
             as: "children"
