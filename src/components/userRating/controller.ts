@@ -131,7 +131,7 @@ export class UserRatingController {
     deleteFile?: boolean
   ): Promise<void> {
     logger.info(`Started parsing user ratings for user ${userId}`);
-    const userRatingsFile = DatasetConfig.userRatingsPath + userId + ".csv";
+    const userRatingsFile = DatasetConfig.userRatingsPath + userId;
     const results: UserRatingCsv[] = [];
 
     const finished = util.promisify(stream.finished);
