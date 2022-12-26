@@ -72,7 +72,8 @@ export class TitleController {
       const results = await Title.aggregate( [
         {
           $match: {
-            "imdbId": parentImdbId
+            imdbId: parentImdbId,
+            children: { $exists: true, $type: 'array', $ne: [] }
           }
         },
         {
@@ -83,7 +84,7 @@ export class TitleController {
               {
                 $match: {
                   $expr: {
-                    $in: ['$imdbId', '$$childImdbId'] // Todo: If a series has no children then this line causes an error, tt0361240
+                    $in: ['$imdbId', '$$childImdbId']
                   }
                 }
               },
