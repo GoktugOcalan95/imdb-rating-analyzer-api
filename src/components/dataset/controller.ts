@@ -53,6 +53,7 @@ async function cleanCollection(): Promise<void> {
   logger.info("Dropping titles collection");
   await Title.collection.drop();
   await Title.collection.createIndex({ imdbId: 1 });
+  await Title.collection.createIndex({ name: "text" });
 }
 
 async function parseRatings(progressStep?: number): Promise<void> {
