@@ -148,6 +148,10 @@ export class UserRatingController {
     await finished(rs);
     logger.info(`Parsed ${results.length.toString()} user rating rows.`);
 
+    if (results.length > 0){
+      await UserRating.deleteMany({userId: new ObjectId(userId)});
+    }
+
     await insertUserRatings(userId, results);
 
     if (deleteFile && fs.existsSync(userRatingsFile)) {
@@ -165,28 +169,14 @@ async function insertUserRatings(
   logger.info(`Starting to insert ${documentNumStr} user rating documents`);
 
   for (const [, userRating] of userRatings.entries()) {
-    const userRatingRecord = await UserRating.findOne({
+    await UserRating.create({
       userId: new ObjectId(userId),
       imdbId: userRating.tconst,
+      rating: Number(userRating.rating),
+      date: new Date(userRating.date),
+    }).catch((err: any) => {
+      logError(err, "InsertUserRatings - Inserting", { userId, userRating } );
     });
-    if (userRatingRecord) {
-      userRatingRecord.rating = Number(userRating.rating);
-      userRatingRecord.date = new Date(userRating.date);
-      userRatingRecord.save().catch((err: any) => {
-        logError(err, "InsertUserRatings - Updating", userRating);
-        logger.error("UserId: %s", userId);
-      });
-    } else {
-      UserRating.create({
-        userId: new ObjectId(userId),
-        imdbId: userRating.tconst,
-        rating: Number(userRating.rating),
-        date: new Date(userRating.date),
-      }).catch((err: any) => {
-        logError(err, "InsertUserRatings - Inserting", userRating);
-        logger.error("UserId: %s", userId);
-      });
-    }
   }
 
   logger.info(`Finished inserting ${documentNumStr} user rating documents`);
