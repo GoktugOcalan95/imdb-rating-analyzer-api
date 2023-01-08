@@ -4,17 +4,6 @@ import extractJWT from "../auth/middleware";
 
 const router = Router();
 
-// GET Title by Imdb Id
-router.get("/:imdbId", extractJWT, (async (req, res) => {
-  const title = await TitleController.getByImdbId(req.params.imdbId);
-  if (!title) {
-    return res.status(404).json({
-      message: "Title not found",
-    });
-  }
-  res.send(title);
-}) as RequestHandler);
-
 // GET Title By Query
 router.get("/", extractJWT, (async (req, res) => {
   const titles = await TitleController.getAll(req.query);
@@ -58,6 +47,29 @@ router.get("/episodes/:imdbId", extractJWT, (async (req, res) => {
         message: "An unexpected error occured",
       });
     });
+}) as RequestHandler);
+
+// GET Every Series Rated By User With Season Data
+router.get("/seasons", extractJWT, (async (_req, res) => {
+  // eslint-disable-next-line
+  await TitleController.getSeasonsFromUserRatedSeries(res?.locals?.jwt?.userId)
+    .then(titles => res.send(titles))
+    .catch(() => {
+      return res.status(500).json({
+        message: "An unexpected error occured",
+      });
+    });
+}) as RequestHandler);
+
+// GET Title by Imdb Id
+router.get("/:imdbId", extractJWT, (async (req, res) => {
+  const title = await TitleController.getByImdbId(req.params.imdbId);
+  if (!title) {
+    return res.status(404).json({
+      message: "Title not found",
+    });
+  }
+  res.send(title);
 }) as RequestHandler);
 
 export const titleRoutes = router;

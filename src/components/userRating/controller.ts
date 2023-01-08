@@ -26,10 +26,11 @@ export class UserRatingController {
     return UserRating.findOne({userId: userObjId, imdbId});
   }
 
-  public static async getByUserId(userId: string, options: UserRatingQueryOptions): Promise<UserRatingQueryResult | null> {
+  public static async getByUserId(userId: string, options: UserRatingQueryOptions, overrideLimit?: boolean): Promise<UserRatingQueryResult | null> {
     const page = Number(options.page) || 1;
-    const itemPerPage = Number(options.itemPerPage) || 20;
-    const skip = (page - 1) * itemPerPage;
+    const userItemPerPage = Number(options.itemPerPage) || 20;
+    const itemPerPage = Math.min(Math.max(userItemPerPage, 10), 100);
+    const skip = overrideLimit ? 0 : (page - 1) * itemPerPage;
     const sortBy = options.sortBy || "date";
     const sortDirection = Number(options.direction) || 1;
 
@@ -53,10 +54,17 @@ export class UserRatingController {
         }
       });
     }
-    if (options.type){
+    if (options.type && typeof options.type === "string"){
       matches.push({
         "$match": {
           "title.type": options.type,
+        }
+      });
+    }
+    if (options.type && Array.isArray(options.type)){
+      matches.push({
+        "$match": {
+          "title.type": { $in: options.type },
         }
       });
     }
@@ -97,7 +105,7 @@ export class UserRatingController {
         },
         {
           $facet: {
-            items: [{ $skip: skip }, { $limit: itemPerPage }],
+            items: [{ $skip: skip }, { $limit: overrideLimit ? Number.MAX_SAFE_INTEGER : itemPerPage }],
             totalCount: [
               {
                 $count: 'count'
@@ -111,7 +119,7 @@ export class UserRatingController {
       const items: IUserRatingDoc[] = results[0].items;
       // eslint-disable-next-line
       const count = results[0].totalCount.length > 0 ? Number(results[0].totalCount[0].count) : 0;
-      const pageCount = Math.ceil(count / itemPerPage);
+      const pageCount = overrideLimit ? 1 : Math.ceil(count / itemPerPage);
 
       return {
         pagination: {

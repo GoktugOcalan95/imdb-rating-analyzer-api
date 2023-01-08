@@ -1,3 +1,5 @@
+import { ITitleDoc } from "../title/model";
+import { TitleWithUserRatedChildren } from "../title/types";
 import { IUserRatingDoc } from "./model";
 
 export interface UserRatingCsv {
@@ -18,12 +20,17 @@ export interface UserRatingQueryOptions {
   rating?: number;
   date?: Date;
   name?: string,
-  type?: string,
+  type?: string | string[],
   year?: number,
   page?: number;
-  itemPerPage?: 20 | 50 | 100;
+  itemPerPage?: number;
   sortBy?: string;
   direction?: -1 | 1;
+}
+
+export interface UserRatingDocWithTitle extends IUserRatingDoc{
+  title?: TitleWithUserRatedChildren,
+  parentTitle?: ITitleDoc,
 }
 
 export interface UserRatingQueryResult {
@@ -31,5 +38,5 @@ export interface UserRatingQueryResult {
     count: number,
     pageCount: number,
   },
-  items: IUserRatingDoc[],
+  items: UserRatingDocWithTitle[],
 }

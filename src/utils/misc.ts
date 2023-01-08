@@ -42,3 +42,7 @@ export function logError(err: unknown, description: string, object?: unknown): v
     logger.error("Error at %s: ", description, err, {object});
   }
 }
+
+export const roundNumber = (num: number, decimals: number): number => {
+  return Math.round((num + Number.EPSILON) * Math.pow(10, decimals)) / Math.pow(10, decimals);
+}
