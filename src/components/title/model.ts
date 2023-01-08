@@ -14,7 +14,12 @@ export interface ITitleDoc extends Document {
   parentImdbId?: string;
   season?: number;
   episode?: number;
-  children?: string[];
+  children?: {
+    imdbId?: string;
+    season?: number;
+    episode?: number;
+    rating?: number;
+  }[];
 }
 
 export const TitleSchema = new Schema(
@@ -31,7 +36,16 @@ export const TitleSchema = new Schema(
     parentImdbId: String,
     season: Number,
     episode: Number,
-    children: { type: [String], default: undefined },
+    children: {
+      type: [{
+        _id: false,
+        imdbId: String,
+        season: Number,
+        episode: Number,
+        rating: Number,
+      }],
+      default: undefined
+    },
   },
   { collection: "titles" }
 );

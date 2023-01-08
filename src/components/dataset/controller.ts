@@ -258,11 +258,21 @@ async function insertEpisodes(
         });
         if (parentTitle) {
           if (parentTitle.children) {
-            if (!parentTitle.children.includes(episode.tconst)) {
-              parentTitle.children.push(episode.tconst);
+            if (!parentTitle.children.some(child => child.imdbId === episode.tconst)) {
+              parentTitle.children.push({
+                imdbId: episode.tconst,
+                season: Number(episode.seasonNumber) || undefined,
+                episode: Number(episode.episodeNumber) || undefined,
+                rating: title.rating
+              });
             }
           } else {
-            parentTitle.children = [episode.tconst];
+            parentTitle.children = [{
+              imdbId: episode.tconst,
+              season: Number(episode.seasonNumber) || undefined,
+              episode: Number(episode.episodeNumber) || undefined,
+              rating: title.rating
+            }];
           }
           await parentTitle.save().catch((err: any) => {
             handleEpisodeError(err, episode, "parent");
