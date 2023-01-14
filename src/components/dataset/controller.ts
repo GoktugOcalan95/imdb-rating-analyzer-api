@@ -257,20 +257,22 @@ async function insertEpisodes(
           imdbId: episode.parentTconst,
         });
         if (parentTitle) {
+          const seasonNum = Number(episode.seasonNumber);
+          const episodeNum = Number(episode.episodeNumber);
           if (parentTitle.children) {
             if (!parentTitle.children.some(child => child.imdbId === episode.tconst)) {
               parentTitle.children.push({
                 imdbId: episode.tconst,
-                season: Number(episode.seasonNumber) || undefined,
-                episode: Number(episode.episodeNumber) || undefined,
+                season: isNaN(seasonNum) ? undefined : seasonNum,
+                episode: isNaN(episodeNum) ? undefined : episodeNum,
                 rating: title.rating
               });
             }
           } else {
             parentTitle.children = [{
               imdbId: episode.tconst,
-              season: Number(episode.seasonNumber) || undefined,
-              episode: Number(episode.episodeNumber) || undefined,
+              season: isNaN(seasonNum) ? undefined : seasonNum,
+              episode: isNaN(episodeNum) ? undefined : episodeNum,
               rating: title.rating
             }];
           }
