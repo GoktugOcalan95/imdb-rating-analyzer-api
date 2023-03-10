@@ -19,6 +19,10 @@ const tsvOptions = { separator: "\t", quote: "" };
 
 export class DatasetController {
   public static async updateAll(): Promise<void> {
+    if (await isUpdatePaused()){
+      return;
+    }
+
     logger.info("Started updating the title dataset");
     await cleanCollection();
     await downloadRatingsFile();
@@ -29,6 +33,21 @@ export class DatasetController {
     await parseEpisodes(AppConfig.progressStep);
     logger.info("Finished updating the title dataset");
   }
+}
+
+async function isUpdatePaused(): Promise<boolean> {
+  const isUpdatePausedSetting = await SettingController.getValue(CommonSettings.isUpdatePaused);
+  if (!isUpdatePausedSetting) {
+    void SettingController.create(
+      CommonSettings.isUpdatePaused,
+      "false",
+    );
+  }
+  const isUpdatePaused = isUpdatePausedSetting === "true" ? true : false;
+  if (isUpdatePaused){
+    logger.info("Updates are paused via settings");
+  }
+  return isUpdatePaused;
 }
 
 async function cleanCollection(): Promise<void> {
