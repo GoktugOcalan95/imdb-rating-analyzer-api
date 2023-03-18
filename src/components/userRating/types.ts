@@ -15,29 +15,29 @@ export const UserRatingCsvOjb = {
 };
 
 export interface UserRatingQueryOptions {
-  userId?: string,
-  imdbId?: string,
-  rating?: number,
-  date?: Date,
-  name?: string,
-  type?: string | string[],
-  year?: number,
-  page?: number,
-  parentImdbId?: string,
-  itemPerPage?: number,
-  sortBy?: string,
-  direction?: -1 | 1,
+  userId?: string;
+  imdbId?: string;
+  rating?: number;
+  date?: Date;
+  name?: string;
+  type?: string | string[];
+  year?: number;
+  page?: number;
+  parentImdbId?: string;
+  itemPerPage?: number;
+  sortBy?: string;
+  direction?: -1 | 1;
 }
 
 export interface UserRatingDocWithTitle extends IUserRatingDoc{
-  title?: TitleWithUserRatedChildren,
-  parentTitle?: ITitleDoc,
+  title?: TitleWithUserRatedChildren;
+  parentTitle?: ITitleDoc;
 }
 
 export interface UserRatingQueryResult {
   pagination: {
-    count: number,
-    pageCount: number,
-  },
-  items: UserRatingDocWithTitle[],
+    count: number;
+    pageCount: number;
+  };
+  items: UserRatingDocWithTitle[];
 }

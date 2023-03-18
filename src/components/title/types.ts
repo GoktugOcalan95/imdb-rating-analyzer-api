@@ -22,10 +22,10 @@ export interface TitleQueryOptions {
 
 export interface TitleQueryResult {
   pagination: {
-    count: number,
-    pageCount: number,
-  },
-  items: ITitleDoc[],
+    count: number;
+    pageCount: number;
+  };
+  items: ITitleDoc[];
 }
 
 export interface TitleWithChildren extends ITitleDoc {
@@ -43,7 +43,7 @@ export interface TitleWithUserRatedChildren extends ITitleDoc {
 }
 
 export interface TitleWithUserRating extends ITitleDoc {
-  userRating?: IUserRatingDoc
+  userRating?: IUserRatingDoc;
 }
 
 export interface SeasonData {
