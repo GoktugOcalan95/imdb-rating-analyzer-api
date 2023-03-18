@@ -15,17 +15,18 @@ export const UserRatingCsvOjb = {
 };
 
 export interface UserRatingQueryOptions {
-  userId?: string;
-  imdbId?: string;
-  rating?: number;
-  date?: Date;
+  userId?: string,
+  imdbId?: string,
+  rating?: number,
+  date?: Date,
   name?: string,
   type?: string | string[],
   year?: number,
-  page?: number;
-  itemPerPage?: number;
-  sortBy?: string;
-  direction?: -1 | 1;
+  page?: number,
+  parentImdbId?: string,
+  itemPerPage?: number,
+  sortBy?: string,
+  direction?: -1 | 1,
 }
 
 export interface UserRatingDocWithTitle extends IUserRatingDoc{

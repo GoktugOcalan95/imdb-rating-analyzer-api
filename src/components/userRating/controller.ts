@@ -75,6 +75,13 @@ export class UserRatingController {
         }
       });
     }
+    if (options.parentImdbId){
+      matches.push({
+        "$match": {
+          "title.parentImdbId": options.parentImdbId,
+        }
+      });
+    }
 
     try {
 
