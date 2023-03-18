@@ -46,42 +46,42 @@ export class UserRatingController {
           "rating": Number(options.rating),
         }
       });
-    }
+    };
     if (options.name){
       matches.push({
         "$match": {
-          "title.name": options.name,
+          "title.name": { "$regex": new RegExp(options.name, "i") }
         }
       });
-    }
+    };
     if (options.type && typeof options.type === "string"){
       matches.push({
         "$match": {
           "title.type": options.type,
         }
       });
-    }
+    };
     if (options.type && Array.isArray(options.type)){
       matches.push({
         "$match": {
           "title.type": { $in: options.type },
         }
       });
-    }
+    };
     if (options.year){
       matches.push({
         "$match": {
           "title.year": Number(options.year),
         }
       });
-    }
+    };
     if (options.parentImdbId){
       matches.push({
         "$match": {
           "title.parentImdbId": options.parentImdbId,
         }
       });
-    }
+    };
 
     try {
 
