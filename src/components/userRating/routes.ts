@@ -29,6 +29,18 @@ router.post("/parse", extractJWT, upload.single('file'), async (req, res) => {
   res.sendStatus(200);
 });
 
+// GET Rating Analysis
+router.get("/analysis", extractJWT, (async (req, res) => {
+  // eslint-disable-next-line
+  await UserRatingController.getAnalysis(res?.locals?.jwt?.userId)
+    .then(analysis => res.send(analysis))
+    .catch(() => {
+      return res.status(500).json({
+        message: "An unexpected error occured",
+      });
+    });
+}) as RequestHandler);
+
 // GET Rating By Query
 router.get("/", extractJWT, (async (req, res) => {
   // eslint-disable-next-line

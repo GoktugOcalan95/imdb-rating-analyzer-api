@@ -41,3 +41,20 @@ export interface UserRatingQueryResult {
   };
   items: UserRatingDocWithTitle[];
 }
+
+export interface UserRatingDistribution {
+  type: string;
+  ratings: number[];
+}
+
+export interface UserRatingDifference {
+  type: string;
+  difference: number;
+  count: number;
+}
+
+export interface UserAnalysisResult {
+  distribution: UserRatingDistribution[];
+  avgDifference: UserRatingDifference[];
+  maxDifference: UserRatingDocWithTitle[];
+}

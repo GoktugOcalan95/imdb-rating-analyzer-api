@@ -6,7 +6,7 @@ import { logError, logger } from "../../utils";
 import { DatasetConfig } from "../../config";
 import { IUserRatingDoc, UserRating } from "./model";
 import { ObjectId } from "mongodb";
-import { UserRatingCsv, UserRatingCsvOjb, UserRatingQueryOptions, UserRatingQueryResult } from "./types";
+import { UserRatingCsv, UserRatingCsvOjb, UserRatingDocWithTitle, UserRatingQueryOptions, UserRatingQueryResult, UserRatingDistribution, UserRatingDifference, UserAnalysisResult } from "./types";
 
 const csvOptions = {
   separator: ",",
@@ -36,51 +36,62 @@ export class UserRatingController {
 
     const matches: Record<string, unknown>[] = [];
     matches.push({
-      "$match": {
+      $match: {
         "userId": new ObjectId(userId),
       }
     });
     if (options.rating){
       matches.push({
-        "$match": {
+        $match: {
           "rating": Number(options.rating),
         }
       });
     };
     if (options.name){
       matches.push({
-        "$match": {
+        $match: {
           "title.name": { "$regex": new RegExp(options.name, "i") }
         }
       });
     };
     if (options.type && typeof options.type === "string"){
       matches.push({
-        "$match": {
+        $match: {
           "title.type": options.type,
         }
       });
     };
     if (options.type && Array.isArray(options.type)){
       matches.push({
-        "$match": {
+        $match: {
           "title.type": { $in: options.type },
         }
       });
     };
     if (options.year){
       matches.push({
-        "$match": {
+        $match: {
           "title.year": Number(options.year),
         }
       });
     };
     if (options.parentImdbId){
       matches.push({
-        "$match": {
+        $match: {
           "title.parentImdbId": options.parentImdbId,
         }
       });
+    };
+
+    const overrideProjection = overrideLimit ?
+    {
+      $match: {}  // include all episodes of a tv series, if overrideLimit flag is true
+    }
+    :
+    {
+      $project: {
+        "parentTitle.children": 0,
+      }
     };
 
     try {
@@ -104,6 +115,7 @@ export class UserRatingController {
           }
         },
         { $unwind: { path: '$parentTitle', preserveNullAndEmptyArrays: true } },
+        overrideProjection,
         ...matches,
         {
           $sort: {
@@ -136,7 +148,7 @@ export class UserRatingController {
         items,
       };
     } catch (err) {
-      logError(err, "UserRating - GetAll", { userId, options } );
+      logError(err, "UserRating - getByUserId", { userId, options } );
       return Promise.reject(null);
     }
   }
@@ -173,6 +185,101 @@ export class UserRatingController {
       fs.unlinkSync(userRatingsFile);
     }
     logger.info(`Finished parsing user ratings for user ${userId}`);
+  }
+
+  public static async getAnalysis(userId: string): Promise<UserAnalysisResult | null> {
+    try {
+      const results: UserRatingDocWithTitle[] = await UserRating.aggregate([
+        {
+          $lookup: {
+            from: "titles",
+            localField: "imdbId",
+            foreignField: "imdbId",
+            as: "title"
+          }
+        },
+        { $unwind: "$title" },
+        {
+          $lookup: {
+            from: "titles",
+            localField: "title.parentImdbId",
+            foreignField: "imdbId",
+            as: "parentTitle"
+          }
+        },
+        { $unwind: { path: '$parentTitle', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            "parentTitle.children": 0
+          }
+        },
+        {
+          $match: {
+            "userId": new ObjectId(userId),
+          }
+        }
+      ]);
+      
+      const userRatingDistribution: UserRatingDistribution[] = [];
+      const userRatingDifference: UserRatingDifference[] = [];
+      const userRatingMaxDiff: UserRatingDocWithTitle[] = [];
+      results.forEach(result => {
+        const titleType = result.title?.type;
+        const titleRating = result.title?.rating;
+        if (!titleType || !titleRating){
+          return;
+        }
+
+        const ratingDistribution = userRatingDistribution.find( rating => rating.type === titleType );
+        if (ratingDistribution){
+          ratingDistribution.ratings[result.rating - 1] += 1;
+        }
+        else {
+          const ratingArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+          ratingArray[result.rating - 1] += 1
+          userRatingDistribution.push({
+            type: titleType,
+            ratings: ratingArray,
+          })
+        }
+
+        const ratingDifference = userRatingDifference.find( rating => rating.type === titleType );
+        if (ratingDifference){
+          ratingDifference.difference += result.rating - titleRating;
+          ratingDifference.count += 1;
+        }
+        else {
+          userRatingDifference.push({
+            type: titleType,
+            difference: result.rating - titleRating,
+            count: 1,
+          })
+        }
+
+        if (userRatingMaxDiff.length < 10){
+          userRatingMaxDiff.push(result);
+        }
+        else{
+          const minRating = Math.min(...userRatingMaxDiff.map(userRating => Math.abs(userRating.rating - (userRating.title?.rating ?? 0))));
+          if (minRating < (result.rating - titleRating)){
+            const minRatedTitle = userRatingMaxDiff.findIndex(userRating => Math.abs(userRating.rating - (userRating.title?.rating ?? 0)) === minRating);
+            userRatingMaxDiff.splice(minRatedTitle, 1);
+            userRatingMaxDiff.push(result);
+          }
+        }
+      });
+
+      userRatingMaxDiff.sort((a, b) => Math.abs(b.rating - (b.title?.rating ?? 0)) - Math.abs(a.rating - (a.title?.rating ?? 0)))
+
+      return {
+        distribution: userRatingDistribution,
+        avgDifference: userRatingDifference,
+        maxDifference: userRatingMaxDiff,
+      };
+    } catch (err) {
+      logError(err, "UserRating - getAnalysis", { userId } );
+      return Promise.reject(null);
+    }
   }
 }
 

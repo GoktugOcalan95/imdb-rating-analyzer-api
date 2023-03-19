@@ -39,7 +39,7 @@ export class TitleController {
         items,
       };
     } catch (err) {
-      logError(err, "Title - GetAll", options);
+      logError(err, "Title - getAll", options);
       return Promise.reject(null);
     }
   }
