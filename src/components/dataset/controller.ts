@@ -28,9 +28,9 @@ export class DatasetController {
     await downloadRatingsFile();
     await downloadBasicsFile();
     await downloadEpisodeFile();
-    await parseRatings(AppConfig.progressStep);
-    await parseBasics(AppConfig.progressStep);
-    await parseEpisodes(AppConfig.progressStep);
+    const ratingSet = await parseRatings(AppConfig.progressStep);
+    await parseBasics(ratingSet, AppConfig.progressStep);
+    await parseEpisodes(ratingSet, AppConfig.progressStep);
     logger.info("Finished updating the title dataset");
   }
 }
@@ -75,7 +75,7 @@ async function cleanCollection(): Promise<void> {
   await Title.collection.createIndex({ name: "text" });
 }
 
-async function parseRatings(progressStep?: number): Promise<void> {
+async function parseRatings(progressStep?: number): Promise<Set<string>> {
   logger.info("Started parsing ratings");
   const results: RatingTsv[] = [];
   let rowsParsed = 0;
@@ -95,9 +95,11 @@ async function parseRatings(progressStep?: number): Promise<void> {
     });
 
   await finished(rs);
+  const ratingsSet = new Set(results.map(item => item.tconst));
   logger.info(`Parsed ${rowsParsed.toString()} rating rows.`);
 
   await insertRatings(results, progressStep);
+  return ratingsSet;
 }
 
 async function downloadRatingsFile(): Promise<void> {
@@ -149,22 +151,28 @@ async function insertRatings(
   }
 }
 
-async function parseBasics(progressStep?: number): Promise<void> {
+async function parseBasics(ratingSet: Set<string>, progressStep?: number): Promise<void> {
   logger.info("Started parsing basics");
   const results: BasicTsv[] = [];
+  let rowsParsed = 0;
 
   const finished = util.promisify(stream.finished);
 
   const rs: any = fs
     .createReadStream(basicsFile)
     .pipe(csv(tsvOptions))
-    .on("data", (data: BasicTsv) => results.push(data))
+    .on("data", (data: BasicTsv) => {
+      if (ratingSet.has(data.tconst)) {
+        results.push(data);
+      };
+      rowsParsed++;
+    })
     .on("error", function (err) {
       logger.error("Error reading basics file %s", err.message);
     });
 
   await finished(rs);
-  logger.info(`Parsed ${results.length.toString()} basics rows.`);
+  logger.info(`Parsed ${rowsParsed.toString()} basics rows.`);
 
   await insertBasics(results, progressStep);
 }
@@ -194,8 +202,8 @@ async function insertBasics(
   basics: BasicTsv[],
   progressStep?: number
 ): Promise<void> {
-  logger.info("Started inserting basics documents");
   const documentNum: number = basics.length;
+  logger.info(`Starting to insert ${documentNum.toString()} basics documents`);
 
   for (const [index, basic] of basics.entries()) {
     const title = await Title.findOne({ imdbId: basic.tconst });
@@ -214,22 +222,28 @@ async function insertBasics(
   }
 }
 
-async function parseEpisodes(progressStep?: number): Promise<void> {
+async function parseEpisodes(ratingSet: Set<string>, progressStep?: number): Promise<void> {
   logger.info("Started parsing episodes");
   const results: EpisodeTsv[] = [];
+  let rowsParsed = 0;
 
   const finished = util.promisify(stream.finished);
 
   const rs: any = fs
     .createReadStream(episodeFile)
     .pipe(csv(tsvOptions))
-    .on("data", (data: EpisodeTsv) => results.push(data))
+    .on("data", (data: EpisodeTsv) => {
+      if (ratingSet.has(data.tconst)) {
+        results.push(data);
+      };
+      rowsParsed++;
+    })
     .on("error", function (err) {
       logger.error("Error reading episodes file %s", err.message);
     });
 
   await finished(rs);
-  logger.info(`Parsed ${results.length.toString()} episode rows.`);
+  logger.info(`Parsed ${rowsParsed.toString()} episode rows.`);
 
   await insertEpisodes(results, progressStep);
 }
@@ -259,8 +273,10 @@ async function insertEpisodes(
   episodes: EpisodeTsv[],
   progressStep?: number
 ): Promise<void> {
-  logger.info("Started inserting episodes documents");
   const documentNum: number = episodes.length;
+  logger.info(`Starting to insert ${documentNum.toString()} episodes documents`);
+  let episodesInserted = 0;
+  let parentsUpdated = 0;
 
   for (const [index, episode] of episodes.entries()) {
     const title = await Title.findOne({ imdbId: episode.tconst });
@@ -271,6 +287,7 @@ async function insertEpisodes(
           .catch((err: any) => {
             handleEpisodeError(err, episode, "child");
           });
+        episodesInserted++;
 
         const parentTitle = await Title.findOne({
           imdbId: episode.parentTconst,
@@ -298,6 +315,7 @@ async function insertEpisodes(
           await parentTitle.save().catch((err: any) => {
             handleEpisodeError(err, episode, "parent");
           });
+          parentsUpdated++;
         }
       }
     }
@@ -305,6 +323,8 @@ async function insertEpisodes(
       handleProgress(index, documentNum, progressStep);
     }
   }
+  logger.info(`Inserted ${episodesInserted.toString()} episodes.`);
+  logger.info(`Updated parents ${parentsUpdated.toString()} times.`);
 }
 
 function convertTsvToModel(
