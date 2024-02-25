@@ -11,7 +11,10 @@ export const SettingSchema = new Schema(
     key: { type: String, index: { unique: true } },
     value: String,
   },
-  { collection: "settings" }
+  {
+    collection: "settings",
+    versionKey: false
+  }
 );
 
 export type SettingModel = Model<ISettingDoc>;

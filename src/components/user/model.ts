@@ -13,7 +13,10 @@ export const UserSchema = new Schema(
     password: String,
     isAdmin: { type: Boolean, default: false },
   },
-  { collection: "users" }
+  {
+    collection: "users",
+    versionKey: false
+  }
 );
 
 export type UserModel = Model<IUserDoc>;

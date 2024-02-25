@@ -47,7 +47,10 @@ export const TitleSchema = new Schema(
       default: undefined
     },
   },
-  { collection: "titles" }
+  {
+    collection: "titles",
+    versionKey: false
+  }
 );
 TitleSchema.index({ name: 'text' }, { background: false });
 

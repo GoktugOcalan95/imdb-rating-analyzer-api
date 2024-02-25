@@ -19,7 +19,8 @@ export const UserRatingSchema = new Schema(
   { 
     collection: "userRatings",
     toObject: { virtuals: true },
-    toJSON: { virtuals: true }
+    toJSON: { virtuals: true },
+    versionKey: false
   }
 );
 UserRatingSchema.index({ userId: 1, imdbId: 1 }, { unique: true });
