@@ -12,7 +12,7 @@ export const AppConfig = {
   logPath: "./logs/",
   progressStep: Number(process.env.PROGRESS_STEP) || 10,
   minimumVotes: Number(process.env.MINIMMUM_VOTES) || 100,
-  dropCollectionInterval: Number(process.env.DROP_COLLECTION_INTERVAL) || 7,
+  dropCollectionInterval: Number(process.env.DROP_COLLECTION_INTERVAL) || 28,
 };
 
 export const ClientConfig = {
